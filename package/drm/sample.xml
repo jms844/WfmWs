@@ -1,0 +1,20 @@
+<FlowResult ApiVersion="1.6" EntryDNIS="10011175004" EntryId="10011175004" Function="Production.IHD.TSO FIOS Eng" MPPActivePorts="20" MPPAvailablePorts="275" MPPTotalPorts="295" Mpp="inftwyplat3admin" MppPortUtilization="6" Region="IHD" SessionId="inftwyplat3admin-2018050154301-37" Snapshot="Production" Source="AVP" Timestamp="2018-02-19 15:43:01" UCID="10007244911519054830">
+    <Route Blending="BestEWT" Exit="Production.IHD.TSO FIOS Eng.normal.InternalCM3" Group="InternalCM3" Preferred="true" TransferSkill="3107" TransferVdn="10013052073">
+        <TransferGroupSearch>
+            <Group BestEwt="0" Blending="EWT" Name="IBEX Onboard" State="OPEN">
+                <Exit AgentPercentAvail="1" AgentsAvail="1" AgentsStaffed="63" CMSState="OK" CallsWaiting="0" Ewt="0" LeastOccupiedAgent="42.17" MostIdleAgentTime="40404" Name="Production.IHD.TSO FIOS Eng.normal.IBEX Onboard" State="OPEN" Status="OK" Type="CMS"/>
+            </Group>
+            <Group BestEwt="0" Blending="EWT" Name="InternalCM3" Preferred="true" State="OPEN">
+                <Exit AgentPercentAvail="66" AgentsAvail="75" AgentsStaffed="113" CMSState="OK" CallsWaiting="0" Ewt="0" LeastOccupiedAgent="36.61" MostIdleAgentTime="1136935" Name="Production.IHD.TSO FIOS Eng.normal.InternalCM3" State="OPEN" Status="OK" Type="CMS"/>
+            </Group>
+            <Group BestEwt="0" Blending="EWT" Name="Empereon OnBoard" State="OPEN">
+                <Exit AgentPercentAvail="33" AgentsAvail="6" AgentsStaffed="18" CMSState="OK" CallsWaiting="0" Ewt="0" LeastOccupiedAgent="44.56" MostIdleAgentTime="514772" Name="Production.IHD.TSO FIOS Eng.normal.Empereon Onboard" State="OPEN" Status="OK" Type="CMS"/>
+            </Group>
+            <Group Name="TNI" State="CLOSED">
+                <Exit AgentPercentAvail="3" AgentsAvail="2" AgentsStaffed="63" CallsWaiting="0" Ewt="0" LeastOccupiedAgent="-1.0" MostIdleAgentTime="-1" Name="Production.IHD.TSO FIOS Eng.normal.TNI" State="CLOSED"/>
+            </Group>
+        </TransferGroupSearch>
+        <RouteSearch Group="InternalCM3"/>
+    </Route>
+    <CallStatus Timestamp="2018-02-19 15:43:02" TransferVdn="10013052073">ROUTED</CallStatus>
+</FlowResult>

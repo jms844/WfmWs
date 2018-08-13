@@ -8,7 +8,7 @@ describe('db',function(){
     it('Should be name of the database of WfmData',function(){
         assert.equal(db.WfmServer.database,'WfmData');
     });
-    it('Should be name of the server of SQLINFWWDVP01\\DCPRD01',function(){
-        assert.equal(db.WfmServer.server,'SQLINFWWDVP01\\DCPRD01');
+    it('Should be name of the server of SQLINFWWDVP01',function(){
+        assert.equal(db.WfmServer.server,'SQLINFWWDVP01');
     });
 });
