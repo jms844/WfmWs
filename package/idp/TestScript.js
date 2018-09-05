@@ -3,32 +3,32 @@
   Your installation of the WFM web services MUST (!) be set to use BASIC authentication rather than FORM authentication. 
  
 */
-var m_WFMHost = "ewfmweb.corp.pvt";
-var m_WFMDatabaseAlias = "WFMData";
-var m_Username = "s_workforceuser";
-var m_Password = "Frontier1";
+var m_WFMHost = 'ewfmweb.corp.pvt';
+var m_WFMDatabaseAlias = 'WFMData';
+var m_Username = 's_workforceuser';
+var m_Password = 'Frontier1';
 var m_TimeoutValue = 480; // 8 minutes
 
 function PostURL(ServletName) {
   var result;
   result =
-    "http://" +
+    'http://' +
     m_WFMHost +
-    "/WFMWebSvcs/" +
+    '/WFMWebSvcs/' +
     m_WFMDatabaseAlias +
-    "/ENU/API/servlet/" +
+    '/ENU/API/servlet/' +
     ServletName +
-    ".ewfm";
+    '.ewfm';
   return result;
 }
 
 function PostBody(DataIn) {
   var result;
   result =
-    "NoStyle=&NoErrorStyle=&" +
-    "data_in=" +
+    'NoStyle=&NoErrorStyle=&' +
+    'data_in=' +
     escape(DataIn) +
-    "&Timeout=" +
+    '&Timeout=' +
     m_TimeoutValue;
   return result;
 }
@@ -36,7 +36,7 @@ function PostBody(DataIn) {
 function CallEWFMWebService(HttpReq, ServletName, DataIn) {
   var HTTPREQUEST_SETCREDENTIALS_FOR_SERVER = 0;
   HttpReq.SetTimeouts(0, 0, 0, 0); // using POST method   var url = PostURL(ServletName);   var body = PostBody(DataIn);   HttpReq.Open('POST', url);
-  HttpReq.SetRequestHeader("Content-Type", "application/x-www-formurlencoded");
+  HttpReq.SetRequestHeader('Content-Type', 'application/x-www-formurlencoded');
   HttpReq.SetCredentials(
     m_Username,
     m_Password,
@@ -46,13 +46,13 @@ function CallEWFMWebService(HttpReq, ServletName, DataIn) {
   return HttpReq.ResponseText;
 }
 
-console.log("Got here");
+console.log('Got here');
 try {
-  var HttpReq = new ActiveXObject("WinHttp.WinHttpRequest.5.1");
+  var HttpReq = new ActiveXObject('WinHttp.WinHttpRequest.5.1');
   var x;
 
-  console.log("Calling AdminGetUserProfile");
-  x = CallEWFMWebService(HttpReq, "AdminGetUserProfile", "");
+  console.log('Calling AdminGetUserProfile');
+  x = CallEWFMWebService(HttpReq, 'AdminGetUserProfile', '');
   console.log(x);
 
   /*   x = CallEWFMWebService(HttpReq, 'AdminAgentDataGroupLookup', '<AgentDataGroupLookup><PartialCode>A</PartialCode></AgentDataGroupLoo kup>');   console.log(x); 
@@ -86,5 +86,5 @@ try {
  
 */
 } catch (er) {
-  console.log("An error occurred: " + er);
+  console.log('An error occurred: ' + er);
 }

@@ -6,15 +6,18 @@
     "test": "mocha",
     "drm": "node ./package/drm/drm.js",
     "serve": "nodemon ./bin/www",
-    "realTime": "node ./package/realTime/realTime.js"
+    "realTime": "node ./package/realTime/realTime.js",
+    "ilamReq": "node ./package/Ilam/ilamTransfer.js"
   },
   "dependencies": {
+    "axios": "^0.18.0",
     "body-parser": "^1.18.3",
     "bootstrap": "^4.1.2",
     "chai": "^4.1.2",
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.9",
     "express": "*",
+    "http": "0.0.0",
     "http-errors": "~1.6.2",
     "jade": "~1.11.0",
     "jquery": "^3.3.1",
