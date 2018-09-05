@@ -18,7 +18,7 @@ const ilamQuery =
   "Select Cast(DATEADD(MI,SOD.START_MOMENT - TZD.BIAS_MI,'12/30/1899') as date) soDate ,Cast(DATEADD(MI,SOD.START_MOMENT - TZD.BIAS_MI,'12/30/1899') as Time(0)) soTime,SOS.STF_GRP_SK,SOD.STF,Cast(GETDATE() as datetime2(0)) currentTime From STF_OVRD_DET SOD JOIN STF_OVRD_SET SOS 	ON SOD.STF_OVRD_SET_SK = SOS.STF_OVRD_SET_SK JOIN STF_GRP SG ON SOS.STF_GRP_SK = SG.STF_GRP_SK JOIN TIME_ZONE_DET TZD ON SG.TIME_ZONE_SK = TZD.TIME_ZONE_SK AND DATEADD(MI,SOD.START_MOMENT,'12/30/1899') BETWEEN TZD.START_TS AND TZD.STOP_TS WHERE SOS.CODE LIKE '%ILAM%'";
 
 const postIlamQuery =
-  'Insert into dbo.IlamReq(soDate, soTime, STF_GRP_SK, STF, [Updated]) Values @values';
+  'Insert into stg.IlamReq(soDate, soTime, STF_GRP_SK, STF, [Updated]) Values @values';
 
 function getIlamData(callback) {
   const pool59 = new sql01.ConnectionPool(config59, err => {
