@@ -15,7 +15,7 @@ const config59 = {
 };
 
 const ilamQuery =
-  "Select Cast(DATEADD(MI,SOD.START_MOMENT - TZD.BIAS_MI,'12/30/1899') as date) soDate ,Cast(DATEADD(MI,SOD.START_MOMENT - TZD.BIAS_MI,'12/30/1899') as Time(0)) soTime,SOS.STF_GRP_SK,SOD.STF,Cast(GETDATE() as datetime2(0)) currentTime From STF_OVRD_DET SOD JOIN STF_OVRD_SET SOS 	ON SOD.STF_OVRD_SET_SK = SOS.STF_OVRD_SET_SK JOIN STF_GRP SG ON SOS.STF_GRP_SK = SG.STF_GRP_SK JOIN TIME_ZONE_DET TZD ON SG.TIME_ZONE_SK = TZD.TIME_ZONE_SK AND DATEADD(MI,SOD.START_MOMENT,'12/30/1899') BETWEEN TZD.START_TS AND TZD.STOP_TS WHERE SOS.CODE LIKE '%ILAM%'";
+  "Select Cast(DATEADD(MI,SOD.START_MOMENT - TZD.BIAS_MI,'12/30/1899') as date) soDate ,Cast(DATEADD(MI,SOD.START_MOMENT - TZD.BIAS_MI,'12/30/1899') as Time(0)) soTime,SOS.STF_GRP_SK,SOD.STF,Cast(GETDATE() as datetime2(0)) currentTime From STF_OVRD_DET SOD JOIN STF_OVRD_SET SOS 	ON SOD.STF_OVRD_SET_SK = SOS.STF_OVRD_SET_SK JOIN STF_GRP SG ON SOS.STF_GRP_SK = SG.STF_GRP_SK JOIN TIME_ZONE_DET TZD ON SG.TIME_ZONE_SK = TZD.TIME_ZONE_SK AND DATEADD(MI,SOD.START_MOMENT,'12/30/1899') BETWEEN TZD.START_TS AND TZD.STOP_TS WHERE SOS.CODE LIKE '%ILAM%' AND SOS.STF_GRP_SK NOT IN (-969782179131.0,-969745328103.0)";
 
 const postIlamQuery =
   'Insert into stg.IlamReq(soDate, soTime, STF_GRP_SK, STF, [Updated]) Values @values';
@@ -37,34 +37,40 @@ getIlamData(postIlamData);
 async function postIlamData(result) {
   const pool01 = await new sql01.ConnectionPool(config01);
   await pool01.connect();
-  await pool01.request().query('Delete from stg.IlamReq');
-  let valuesList = [];
-  for (j = 0; j < result.length; j += 100) {
-    let values = '';
-    let newResults = result.slice(j, j + 100);
-    for (let i = 0; i < newResults.length; i++) {
-      // console.log(result[i]);
-      values += '(';
-      values += formatInput(newResults[i].soDate) + ',';
-      values += formatInput(newResults[i].soTime) + ',';
-      values += formatInput(newResults[i].STF_GRP_SK) + ',';
-      values += formatInput(newResults[i].STF) + ',';
-      values += formatInput(newResults[i].currentTime);
-      values += ')';
-      if (i + 1 < newResults.length) {
-        values += ',';
+  try {
+    await pool01.request().query('Delete from stg.IlamReq');
+    let valuesList = [];
+    for (j = 0; j < result.length; j += 100) {
+      let values = '';
+      let newResults = result.slice(j, j + 100);
+      for (let i = 0; i < newResults.length; i++) {
+        // console.log(result[i]);
+        values += '(';
+        values += formatInput(newResults[i].soDate) + ',';
+        values += formatInput(newResults[i].soTime) + ',';
+        values += formatInput(newResults[i].STF_GRP_SK) + ',';
+        values += formatInput(newResults[i].STF) + ',';
+        values += formatInput(newResults[i].currentTime);
+        values += ')';
+        if (i + 1 < newResults.length) {
+          values += ',';
+        }
       }
+      const piq = postIlamQuery.replace('@values', values);
+      valuesList.push(piq);
     }
-    const piq = postIlamQuery.replace('@values', values);
-    valuesList.push(piq);
+    console.log(`Importing ${valuesList.length * 100} requirements`);
+    for (let i = 0; i < valuesList.length; i++) {
+      // console.log(i);
+      let successful = await pool01.request().query(valuesList[i]);
+    }
+    console.log('Merging new data with old data');
+    let merged = await pool01.request().query('exec stg.spIlamReq');
+  } catch (err) {
+    console.log(err);
+  } finally {
+    pool01.close();
   }
-  // console.log(values);
-  for (let i = 0; i < valuesList.length; i++) {
-    console.log(i);
-    let successful = await pool01.request().query(valuesList[i]);
-  }
-  let merged = await pool01.request().query('exec stg.spIlamReq');
-  pool01.close();
 }
 
 function formatInput(input) {
@@ -77,26 +83,3 @@ function formatInput(input) {
     return input;
   }
 }
-
-// console.log(typeof getIlamData());
-// getIlamData().then(result => {
-//   console.log(result);
-// });
-
-/*
-const pool = new sql01.ConnectionPool(config01, err => {
-  if (err) {
-    console.log('Error connecting to 01');
-    return;
-  }
-  // console.log('Connected to 01');
-  pool.request().query('Select * from vDimVendor', (err, result) => {
-    if (err) {
-      console.log(err);
-      return;
-    }
-    console.log(result);
-    pool.close();
-  });
-});
-*/
