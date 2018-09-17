@@ -7,7 +7,8 @@
     "drm": "node ./package/drm/drm.js",
     "serve": "nodemon ./bin/www",
     "realTime": "node ./package/realTime/realTime.js",
-    "ilamReq": "node ./package/Ilam/ilamTransfer.js"
+    "ilamReq": "node ./package/Ilam/ilamTransfer.js",
+    "idpTransfer": "node ./package/idp/mainIdp.js"
   },
   "dependencies": {
     "axios": "^0.18.0",
