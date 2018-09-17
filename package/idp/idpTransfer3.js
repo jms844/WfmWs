@@ -9,10 +9,18 @@ const parseString = require('xml2js-parser').parseStringSync;
 const sql = require('mssql');
 const sqlConfig = require('../../config/db').WfmServer;
 
-axios.defaults.headers.common['Content-type'] =
-  'application/x-www-form-urlencoded';
-axios.defaults.headers.common['Authorization'] =
-  'Basic Y29ycFxzX3dvcmtmb3JjZXVzZXI6RnJvbnRpZXIx';
+const axiosConfig = {
+  headers: { 'Content-type': 'application/x-www-form-urlencoded' },
+  auth: {
+    username: 'corp\\s_workforceuser',
+    password: 'Frontier1'
+  }
+};
+
+// axios.defaults.headers.common['Content-type'] =
+//   'application/x-www-form-urlencoded';
+// axios.defaults.headers.common['Authorization'] =
+//   'Basic Y29ycFxzX3dvcmtmb3JjZXVzZXI6RnJvbnRpZXIx';
 
 var m_WFMHost = 'ewfmweb.corp.pvt';
 var m_WFMDatabaseAlias = 'WFMData';
@@ -24,10 +32,8 @@ const idpDetailsForGrp =
   '	<ForecastGroup SK="@fgsk">' +
   '		<Element ID="RVSFORVOL"/>' +
   '		<Element ID="ORGFORVOL"/>' +
-  // '		<Element ID="ActualNco"/>' +
   '		<Element ID="RVSFORAHT"/>' +
   '		<Element ID="ORGFORAHT"/>' +
-  // '		<Element ID="ActualAht"/>' +
   '	</ForecastGroup>' +
   '</IDPDetails>';
 
@@ -50,14 +56,6 @@ const idpLookup =
   '		<Stop>@stopDate</Stop>' +
   '	</DateTimeRange>' +
   '</IDPLookup>';
-
-const stfGrpLookup =
-  '<StaffGroupLookup>' +
-  '	<PartialCode>@sgPartialCode</PartialCode>' +
-  '</StaffGroupLookup>';
-
-const forGrpLookup =
-  '<ForecastGroupLookup>' + '	<Code>@fgCode</Code>' + '</ForecastGroupLookup>';
 
 function PostURL(ServletName) {
   var result;
@@ -83,51 +81,19 @@ function PostBody(DataIn) {
   return result;
 }
 
-async function CallEWFMWebService(ServletName, DataIn, callback) {
+async function CallEWFMWebService(ServletName, DataIn) {
   var HTTPREQUEST_SETCREDENTIALS_FOR_SERVER = 0;
-  //   HttpReq.SetTimeouts(0, 0, 0, 0); // using POST method
   var url = PostURL(ServletName);
-  // console.log(url);
   var body = PostBody(DataIn);
-  // console.log(body);
   try {
-    let result = await axios.post(url, body);
+    let result = await axios.post(url, body, axiosConfig);
     let parsedResult = await parseString(result.data);
     return parsedResult;
   } catch (err) {
     throw err;
   }
-  //   return await parseString(await axios.post(url, body));
-  //   axios
-  //     .post(url, body)
-  //     .then(result => {
-  //       parseString(result.data, function(err, parsed) {
-  //         // console.dir(parsed.IDPs.IDP[0].$.SK);
-  //         callback(parsed);
-  //       });
-  //     })
-  //     .catch(err => {
-  //       console.log('Error when calling web service');
-  //       throw 'Error: ' + err;
-  //     });
-  // HttpReq.Open('POST', url);
-  //   HttpReq.SetRequestHeader('Content-Type', 'application/x-www-formurlencoded');
-  //   HttpReq.SetCredentials(
-  //     m_Username,
-  //     m_Password,
-  //     HTTPREQUEST_SETCREDENTIALS_FOR_SERVER
-  //   );
-  //   HttpReq.Send(body);
-  // return HttpReq.ResponseText;
 }
 
-function printResult(result) {
-  console.log('Printing result');
-  // console.log(result.IDP);
-}
-function printFg(result) {
-  console.dir(result);
-}
 // Get IDP List for routing set
 async function getIdpList(rssk, prevDays, nextDays) {
   try {
@@ -144,14 +110,17 @@ async function getIdpList(rssk, prevDays, nextDays) {
   }
 }
 
+// Returns date relative to todays date.
 function addDays(days) {
-  let today = new Date();
-  let date = new Date(today.getFullYear(), today.getMonth(), today.getDate());
-  date.setDate(date.getDate() + days);
-  return date;
+  let newDate = new Date(new Date().valueOf() + days * 86400000);
+  return newDate;
 }
 
+// Extracts the list of idps of a routing set into something more useable.
 function getIdpListData(idpList) {
+  if (typeof idpList.IDPs.IDP == 'undefined') {
+    throw new Error('No IDPs listed');
+  }
   let idps = idpList.IDPs.IDP;
   let idpDetails = {
     ForGrp: [],
@@ -159,10 +128,8 @@ function getIdpListData(idpList) {
   };
   for (let i = 0; i < idps.length; i++) {
     let idp = idps[i];
-    // console.log(idp.ForecastGroup[0].StaffGroup[0].StaffGroup);
     let idpSk = idp.$.SK;
     for (let j = 0; j < idp.ForecastGroup.length; j++) {
-      // console.log('FGSK' + idp.ForecastGroup[j].$.SK);
       let fg = idp.ForecastGroup[j];
       let fgsk = fg.$.SK;
       idpDetails.ForGrp.push({ idpSk: idpSk, fgsk: fgsk });
@@ -173,57 +140,50 @@ function getIdpListData(idpList) {
       }
     }
   }
+  console.log(
+    `Importing ${idpDetails.ForGrp.length + idpDetails.StfGrp.length} idps.`
+  );
   return idpDetails;
 }
 
+// Call web service to get the idp data of forecast group.
 async function getIdpFgData(idpSk, fgsk) {
   let fgQuery = idpDetailsForGrp
     .replace('@idpSk', idpSk)
     .replace('@fgsk', fgsk);
-  let idpFgData = await CallEWFMWebService('IDP', fgQuery, idpFgDataToString);
-  return idpFgData;
-}
-
-function idpFgDataToString(idpData) {
-  let result = '';
-  let idp = idpData.IDP;
-  let idpSk = idp.$.SK;
-  for (let i = 0; i < idp.ForecastGroup.length; i++) {
-    let fg = idp.ForecastGroup[i];
-    result += idpFgToString(fg, idpSk);
-    if (i < idp.ForecastGroup.length - 1) {
-      result += ',';
-    }
+  try {
+    let idpFgData = await CallEWFMWebService('IDP', fgQuery);
+    return idpFgData;
+  } catch (err) {
+    throw err;
   }
-  console.log(result);
-  return result;
 }
 
+// Outputs web service idp data into readable string.
 function idpFgToString(idp, idpSk) {
-  // let result = '';
   let fg = idp.IDP.ForecastGroup[0];
   let resultArray = [];
   let fgsk = fg.$.SK;
   let openHours = fg.OpenHours[0].Period;
-  // console.log(openHours);
   for (let i = 0; i < fg.Element.length; i++) {
     let element = fg.Element[i];
     let elementName = element.$.ID;
-    // console.log(element.Value);
-    // console.log('');
     for (let j = 0; j < element.Value.length; j++) {
-      // let openStatus = openHours[j].$.Open === 'true';
       if (openHours[j].$.Open === 'true') {
-        // console.log(openHours[j].$.Open);
         let result = '';
         result += '(';
         result += idpSk + ',';
         result += fgsk + ',';
         result += openHours[parseInt(element.Value[j].$.Index)].$.Index + ',';
-        result += openHours[parseInt(element.Value[j].$.Index)].$.Open + ',';
-        result += "'" + openHours[parseInt(element.Value[j].$.Index)]._ + "',";
+        result +=
+          "'" + openHours[parseInt(element.Value[j].$.Index)].$.Open + "',";
+        result +=
+          "Cast('" +
+          new Date(
+            openHours[parseInt(element.Value[j].$.Index)]._
+          ).toLocaleString() +
+          "' as datetime2(0)),";
         result += `'${elementName}',`;
-        // console.log(element.Value[j]._);
         result += element.Value[j]._;
         result += ')';
         resultArray.push(result);
@@ -233,48 +193,165 @@ function idpFgToString(idp, idpSk) {
   return resultArray.join();
 }
 
+// Calls web service to get idp data for a staff group.
 async function getIdpSgData(idpSk, sgsk) {
   let sgQuery = idpDetailsStfGrp
     .replace('@idpSk', idpSk)
     .replace('@sgsk', sgsk);
-  let idpSgData = await CallEWFMWebService('IDP', sgQuery);
-  return idpSgData;
+  try {
+    let idpSgData = await CallEWFMWebService('IDP', sgQuery);
+    return idpSgData;
+  } catch (err) {
+    throw err;
+  }
 }
 
-async function main(rssk, rsCode, prevDays = 0, nextDays = 0) {
-  try {
-    // var HttpReq = new ActiveXObject('WinHttp.WinHttpRequest.5.1');
-    // var x;
+// changes the idp web service data into a readable string output.
+function idpSgToString(idp, idpSk) {
+  // let result = '';
+  let sg = idp.IDP.StaffGroup[0];
+  let resultArray = [];
+  let sgsk = sg.$.SK;
+  let openHours = sg.OpenHours[0].Period;
+  for (let i = 0; i < sg.Element.length; i++) {
+    let element = sg.Element[i];
+    let elementName = element.$.ID;
+    for (let j = 0; j < element.Value.length; j++) {
+      if (openHours[j].$.Open === 'true') {
+        let result = '';
+        result += '(';
+        result += idpSk + ',';
+        result += sgsk + ',';
+        result += openHours[parseInt(element.Value[j].$.Index)].$.Index + ',';
+        result +=
+          "'" + openHours[parseInt(element.Value[j].$.Index)].$.Open + "',";
+        result +=
+          "Cast('" +
+          new Date(
+            openHours[parseInt(element.Value[j].$.Index)]._
+          ).toLocaleString() +
+          "' as datetime2(0)),";
+        result += `'${elementName}',`;
+        result += element.Value[j]._;
+        result += ')';
+        resultArray.push(result);
+      }
+    }
+  }
+  return resultArray.join();
+}
 
-    // console.log('Calling AdminGetUserProfile');
-    // CallEWFMWebService('IDPStaffGroupLookup', stfGrpLookup, printResult);
-    // CallEWFMWebService('IDPForecastGroupLookup', forGrpLookup, printFg);
-    // console.log(prevDays);
-    // console.log(nextDays);
+// Import forcast group data. Validate and import.
+async function importFgData(pool, idpFgData) {
+  if (idpFgData.length == 0) {
+    return;
+  }
+  try {
+    await insertFgData(pool, idpFgData);
+  } catch (err) {
+    console.log('Error importing Fg data');
+    console.log(err.stack);
+    console.log(idpFgData.length);
+  }
+}
+
+// Forcast group insert. Delete old data, insert new data, and merge new data. Throws error if any one of those fail.
+async function insertFgData(pool, data) {
+  try {
+    const sqlInsert =
+      'Insert into stg.IdpFgJs (IDP_SK,FOR_GRP_SK,[Index],[Open],[Interval],[ID],[Value]) Values @values';
+    const myInsert = sqlInsert.replace('@values', data);
+    await pool.request().query('Delete From stg.IdpFgJs');
+    let insertResult = await pool.request().query(myInsert);
+    if (insertResult.rowsAffected.length > 0) {
+      if (insertResult.rowsAffected[0] > 0) {
+        await pool.request().query('exec stg.spMergeIdpFgJs');
+      }
+    }
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Validate staff group input and then import the data.
+async function importSgData(pool, idpFgData) {
+  if (idpFgData.length == 0) {
+    return;
+  }
+
+  // const pool = await new sql.ConnectionPool(sqlConfig);
+  try {
+    await insertSgData(pool, idpFgData);
+  } catch (err) {
+    console.log('Error importing Sg data');
+    console.log(err.stack);
+    console.log(idpFgData.length);
+  }
+}
+
+// Staff group data insert. Delete old data, insert into staging table, then merge.
+async function insertSgData(pool, data) {
+  try {
+    const sqlInsert =
+      'Insert into stg.IdpSgJs (IDP_SK,STF_GRP_SK,[Index],[Open],[Interval],[ID],[Value]) Values @values';
+    const myInsert = sqlInsert.replace('@values', data);
+    await pool.request().query('Delete From stg.IdpSgJs');
+    let insertResult = await pool.request().query(myInsert);
+    if (insertResult.rowsAffected.length > 0) {
+      if (insertResult.rowsAffected[0] > 0) {
+        await pool.request().query('exec stg.spMergeIdpSgJs');
+      }
+    }
+  } catch (err) {
+    throw err;
+  }
+}
+
+// Takes routing set sk (rssk), routing set code (rsCode), and the number of day previous to today and the the days after today to import idp data
+async function main(rssk, rsCode, prevDays = 0, nextDays = 0) {
+  const startDate = addDays(prevDays);
+  const stopDate = addDays(nextDays);
+  const pool = new sql.ConnectionPool(sqlConfig);
+  try {
+    await pool.connect();
+    console.log('Connected to WfmData');
+  } catch (err) {
+    console.log('Could not connect to WfmData');
+    console.log(err.stack);
+    return;
+  }
+  console.log(
+    `importing idps for ${rsCode} from between ${startDate.toLocaleString()} and ${stopDate.toLocaleString()}`
+  );
+  try {
     let idpList = await getIdpList(rssk, prevDays, nextDays);
     let idpDetails = getIdpListData(idpList);
-    // console.log(idpDetails);
     for (let i = 0; i < idpDetails.ForGrp.length; i++) {
       let idpFgData = await getIdpFgData(
         idpDetails.ForGrp[i].idpSk,
         idpDetails.ForGrp[i].fgsk
       );
-      console.log(idpFgToString(idpFgData, idpDetails.ForGrp[i].idpSk));
+      await importFgData(
+        pool,
+        idpFgToString(idpFgData, idpDetails.ForGrp[i].idpSk)
+      );
     }
     for (let i = 0; i < idpDetails.StfGrp.length; i++) {
       let idpSgData = await getIdpSgData(
         idpDetails.StfGrp[i].idpSk,
         idpDetails.StfGrp[i].sgsk
       );
-      // console.log(idpSgData);
+      await importSgData(
+        pool,
+        idpSgToString(idpSgData, idpDetails.StfGrp[i].idpSk)
+      );
     }
-    // console.log(x);
-
-    /*   
-	
-	*/
   } catch (er) {
     console.log('An error occurred: ' + er);
+    console.log(er.stack);
+  } finally {
+    await pool.close();
+    console.log('Closed connection to WfmData');
   }
 }
 

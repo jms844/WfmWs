@@ -62,6 +62,10 @@ const rtgSets = [
   {
     SK: -969747085424,
     CODE: 'RESI SPAN'
+  },
+  {
+    SK: -979117044008,
+    CODE: 'NETREPAIR'
   }
 ];
 
