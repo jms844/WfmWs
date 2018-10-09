@@ -34,6 +34,8 @@ const idpDetailsForGrp =
   '		<Element ID="ORGFORVOL"/>' +
   '		<Element ID="RVSFORAHT"/>' +
   '		<Element ID="ORGFORAHT"/>' +
+  '		<Element ID="RVSCALCSRVCLEVPCT1"/>' +
+  '		<Element ID="RVSCALCSRVCLEVPCT2"/>' +
   '	</ForecastGroup>' +
   '</IDPDetails>';
 
